@@ -93,7 +93,12 @@ func createUrl(c *echo.Context) error {
 	}
 
 	duration := int64(0)
-	o.Key, duration = ds.KeyForRequest(o, "a8c0dbfa-45d8-49a9-a7e2-194dee1a78c2")
+	var err error
+	o.Key, duration, err = ds.KeyForRequest(o, "a8c0dbfa-45d8-49a9-a7e2-194dee1a78c2")
+	if nil != err {
+		log.Printf("keyForRequest: %v, %s. Error: %s", o, "", err.Error())
+		return c.JSON(http.StatusInternalServerError, atm.ErrMsg("Trouble checking authorization"))
+	}
 	if "" == o.Key {
 		return c.JSON(http.StatusForbidden, atm.ErrMsg("Not authorized for this resource"))
 	}
