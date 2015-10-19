@@ -9,6 +9,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/user"
@@ -58,6 +59,15 @@ func parseFlags() {
 }
 
 func main() {
+	ds, err := atm.NewDatastore("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
+		Database_user, Database_pass, Database_host,
+		Database_port, Database))
+	if nil != err {
+		log.Fatal(err)
+	}
+	Database_pass = ""
+	defer ds.Close()
+
 	Key = os.Args[1]
 
 	e := echo.New()
@@ -71,7 +81,7 @@ func main() {
 }
 
 func createUrl(c *echo.Context) error {
-	o := &atm.UrlRequest{Host: HOST, Key: Key, Duration: DURATION}
+	o := &atm.UrlRequest{Host: Object_host, Key: Key, Duration: Default_duration}
 	if err := c.Bind(o); nil != err {
 		return c.JSON(http.StatusBadRequest, atm.ErrMsg(err.Error()))
 	}
