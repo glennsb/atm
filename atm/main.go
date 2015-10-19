@@ -7,12 +7,16 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"net/http"
 	"os"
+	"os/user"
 
 	//_ "github.com/go-sql-driver/mysql"
 
 	"github.com/glennsb/atm"
+	"github.com/howeyc/gopass"
 	"github.com/labstack/echo"
 	mw "github.com/labstack/echo/middleware"
 )
@@ -22,7 +26,36 @@ const (
 	DURATION = int64(300)
 )
 
-var Key string
+var (
+	Key              string
+	Database         string
+	Database_host    string
+	Database_user    string
+	Database_pass    string
+	Database_port    int
+	Default_duration int64
+	Object_host      string
+)
+
+func init() {
+	current_user, _ := user.Current()
+	Database_user = current_user.Username
+	parseFlags()
+
+	fmt.Printf("%s@%s/%s password: ", Database_user, Database_host, Database)
+	Database_pass = string(gopass.GetPasswd())
+}
+
+func parseFlags() {
+	flag.StringVar(&Database, "database", "atm", "Database name")
+	flag.StringVar(&Database_host, "database-host", "localhost", "Database server hostname")
+	flag.IntVar(&Database_port, "database-port", 3306, "Database server port")
+	flag.StringVar(&Database_user, "database-user", Database_user, "Username for database")
+	flag.Int64Var(&Default_duration, "duration", DURATION, "Default lifetime of tempurl")
+	flag.StringVar(&Object_host, "host", HOST, "Swift host prefix")
+
+	flag.Parse()
+}
 
 func main() {
 	Key = os.Args[1]
