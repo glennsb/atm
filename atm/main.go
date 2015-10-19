@@ -83,7 +83,7 @@ func main() {
 }
 
 func createUrl(c *echo.Context) error {
-	o := &atm.UrlRequest{Host: Object_host, Key: Key, Duration: Default_duration}
+	o := &atm.UrlRequest{Host: Object_host, Duration: Default_duration}
 	if err := c.Bind(o); nil != err {
 		return c.JSON(http.StatusBadRequest, atm.ErrMsg(err.Error()))
 	}
@@ -92,8 +92,13 @@ func createUrl(c *echo.Context) error {
 		return c.JSON(http.StatusBadRequest, atm.ErrMsg("Missing account, container, object, or method"))
 	}
 
-	if !ds.Authorized(o, "a8c0dbfa-45d8-49a9-a7e2-194dee1a78c2") {
+	duration := int64(0)
+	o.Key, duration = ds.KeyForRequest(o, "a8c0dbfa-45d8-49a9-a7e2-194dee1a78c2")
+	if "" == o.Key {
 		return c.JSON(http.StatusForbidden, atm.ErrMsg("Not authorized for this resource"))
+	}
+	if duration > 0 && duration > o.Duration {
+		o.Duration = duration
 	}
 
 	u := &atm.Tmpurl{

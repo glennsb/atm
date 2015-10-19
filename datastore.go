@@ -35,6 +35,6 @@ func (d *Datastore) Close() error {
 	return d.pool.Close()
 }
 
-func (d *Datastore) Authorized(u *UrlRequest, appId string) bool {
-	return false
+func (d *Datastore) KeyForRequest(u *UrlRequest, appId string) (string, int64) {
+	return "", 0
 }
