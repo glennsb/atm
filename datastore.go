@@ -34,3 +34,7 @@ func (d *Datastore) Ping() error {
 func (d *Datastore) Close() error {
 	return d.pool.Close()
 }
+
+func (d *Datastore) Authorized(u *UrlRequest, appId string) bool {
+	return false
+}

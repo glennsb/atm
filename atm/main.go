@@ -14,7 +14,7 @@ import (
 	"os"
 	"os/user"
 
-	//_ "github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/glennsb/atm"
 	"github.com/howeyc/gopass"
@@ -36,6 +36,7 @@ var (
 	Database_port    int
 	Default_duration int64
 	Object_host      string
+	ds               *atm.Datastore
 )
 
 func init() {
@@ -59,7 +60,8 @@ func parseFlags() {
 }
 
 func main() {
-	ds, err := atm.NewDatastore("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
+	var err error
+	ds, err = atm.NewDatastore("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
 		Database_user, Database_pass, Database_host,
 		Database_port, Database))
 	if nil != err {
@@ -89,6 +91,11 @@ func createUrl(c *echo.Context) error {
 	if !o.Valid() {
 		return c.JSON(http.StatusBadRequest, atm.ErrMsg("Missing account, container, object, or method"))
 	}
+
+	if !ds.Authorized(o, "a8c0dbfa-45d8-49a9-a7e2-194dee1a78c2") {
+		return c.JSON(http.StatusForbidden, atm.ErrMsg("Not authorized for this resource"))
+	}
+
 	u := &atm.Tmpurl{
 		Url:  o.SignedUrl(),
 		Path: o.Path(),
