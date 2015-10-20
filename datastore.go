@@ -113,6 +113,9 @@ func (d *Datastore) KeyForRequest(u *UrlRequest, appId string) (string, int64, e
 		}
 		numRows++
 	}
+	if 0 == numRows {
+		return "", 0, nil
+	}
 
 	signing_key = d.signingKeyFor(grantingAccountId)
 	if "" == signing_key {
