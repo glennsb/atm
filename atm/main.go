@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"os/user"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -69,8 +68,6 @@ func main() {
 	}
 	Database_pass = ""
 	defer ds.Close()
-
-	Key = os.Args[1]
 
 	e := echo.New()
 

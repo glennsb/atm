@@ -8,10 +8,12 @@ package atm
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 )
 
 type Datastore struct {
-	pool *sql.DB
+	pool        *sql.DB
+	signingKeys Cache
 }
 
 func NewDatastore(driver, dsn string) (*Datastore, error) {
@@ -25,6 +27,7 @@ func NewDatastore(driver, dsn string) (*Datastore, error) {
 	if nil != err {
 		return nil, err
 	}
+	ds.signingKeys = NewCache()
 	return ds, nil
 }
 
@@ -36,11 +39,19 @@ func (d *Datastore) Close() error {
 	return d.pool.Close()
 }
 
+func (d *Datastore) AddSigningKeyForAccount(key, account string) {
+	d.signingKeys.Set(account, key)
+}
+
+func (d *Datastore) signingKeyFor(account string) string {
+	return d.signingKeys.Get(account)
+}
+
 func (d *Datastore) KeyForRequest(u *UrlRequest, appId string) (string, int64, error) {
 	var signing_key string
 	var duration int64
-	stmt, err := d.pool.Prepare("SELECT acc.signing_key, r.duration as duration from applications app, accounts acc, rules r " +
-		"WHERE r.application_id = app.id AND r.account_id=acc.id AND app.id = ? AND acc.name = ? AND " +
+	stmt, err := d.pool.Prepare("SELECT a.id, r.duration as duration from accounts a, rules r " +
+		"WHERE r.account_id=a.id AND requestor_id = ? AND a.name = ? AND " +
 		"? REGEXP r.container AND ? REGEXP r.object AND r.method = ?")
 	if nil != err {
 		return signing_key, duration, err
@@ -52,11 +63,12 @@ func (d *Datastore) KeyForRequest(u *UrlRequest, appId string) (string, int64, e
 	}
 	defer rows.Close()
 	numRows := 0
+	var grantingAccountId string
 	for rows.Next() {
 		if numRows > 1 {
 			return signing_key, duration, errors.New("Too many results")
 		}
-		err := rows.Scan(&signing_key, &duration)
+		err := rows.Scan(&grantingAccountId, &duration)
 		if nil != err {
 			return signing_key, duration, err
 		}
@@ -65,6 +77,11 @@ func (d *Datastore) KeyForRequest(u *UrlRequest, appId string) (string, int64, e
 			return signing_key, duration, err
 		}
 		numRows++
+	}
+
+	signing_key = d.signingKeyFor(grantingAccountId)
+	if "" == signing_key {
+		return signing_key, 0, errors.New(fmt.Sprintf("Key not set for %s", u.Account))
 	}
 
 	return signing_key, duration, nil
