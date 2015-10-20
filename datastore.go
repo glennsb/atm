@@ -16,6 +16,11 @@ type Datastore struct {
 	signingKeys Cache
 }
 
+type Account struct {
+	Id   string `json:id`
+	Name string `json:name`
+}
+
 func NewDatastore(driver, dsn string) (*Datastore, error) {
 	ds := &Datastore{}
 	var err error
@@ -45,6 +50,36 @@ func (d *Datastore) AddSigningKeyForAccount(key, account string) {
 
 func (d *Datastore) signingKeyFor(account string) string {
 	return d.signingKeys.Get(account)
+}
+
+func (d *Datastore) Account(name string) (*Account, error) {
+	a := &Account{}
+	stmt, err := d.pool.Prepare("SELECT id, name from accounts where name = ?")
+	if nil != err {
+		return a, err
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query(name)
+	if nil != err {
+		return a, err
+	}
+	defer rows.Close()
+	numRows := 0
+	for rows.Next() {
+		if numRows > 1 {
+			return a, errors.New("Too many results")
+		}
+		err := rows.Scan(&a.Id, &a.Name)
+		if nil != err {
+			return a, err
+		}
+		err = rows.Err()
+		if nil != err {
+			return a, err
+		}
+		numRows++
+	}
+	return a, nil
 }
 
 func (d *Datastore) KeyForRequest(u *UrlRequest, appId string) (string, int64, error) {
