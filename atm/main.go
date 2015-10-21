@@ -118,7 +118,11 @@ func createUrl(c *echo.Context) error {
 
 	duration := int64(0)
 	var err error
-	o.Key, duration, err = ds.KeyForRequest(o, c.Request().Header.Get("authorization"))
+	requestorId, ok := c.Get(atm.API_KEY).(string)
+	if !ok {
+		return c.JSON(http.StatusInternalServerError, atm.ErrMsg("Failed getting requesting id"))
+	}
+	o.Key, duration, err = ds.KeyForRequest(o, requestorId)
 	if nil != err {
 		log.Printf("keyForRequest: %v, %s. Error: %s", o, "", err.Error())
 		return c.JSON(http.StatusInternalServerError, atm.ErrMsg("Trouble checking authorization"))
