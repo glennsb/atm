@@ -98,13 +98,6 @@ func newAuth(r *http.Request, o *HmacOpts) (*Authorizor, error) {
 }
 
 func (a *Authorizor) Authentic(r *http.Request) error {
-	secret, err := a.Opts.SecretKeyFor(a.ApiKey)
-	if nil != err {
-		return err
-	}
-	if "" == secret {
-		return hmacError{fmt.Sprintf("No secret key for %s", a.ApiKey)}
-	}
 	if err := a.invalidTime(); nil != err {
 		return err
 	}
@@ -114,6 +107,13 @@ func (a *Authorizor) Authentic(r *http.Request) error {
 	if a.Md5 != contentHash {
 		return hmacError{fmt.Sprintf("Content MD5s do not match:%s", contentHash)}
 	}
+	secret, err := a.Opts.SecretKeyFor(a.ApiKey)
+	if nil != err {
+		return err
+	}
+	if "" == secret {
+		return hmacError{fmt.Sprintf("No secret key for %s", a.ApiKey)}
+	}
 	generatedSig := a.signatureWith(secret)
 	if "" == generatedSig {
 		return hmacError{"Unable to generate hmac signature"}
@@ -121,7 +121,7 @@ func (a *Authorizor) Authentic(r *http.Request) error {
 	if hmac.Equal([]byte(generatedSig), []byte(a.Signature)) {
 		return nil
 	}
-	return hmacError{fmt.Sprintf("HMAC Signature mismatch: %s", generatedSig)}
+	return hmacError{"HMAC Signature mismatch"}
 }
 
 func md5Of(b []byte) string {
