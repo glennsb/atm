@@ -58,6 +58,10 @@ func parseFlags() {
 	flag.Parse()
 }
 
+func keyFinder(a string) (string, error) {
+	return ds.ApiKeySecret(a)
+}
+
 func main() {
 	var err error
 	ds, err = atm.NewDatastore("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
@@ -74,6 +78,8 @@ func main() {
 	// Middleware
 	e.Use(mw.Logger())
 	e.Use(mw.Recover())
+	auth_opts := atm.NewHmacOpts(keyFinder)
+	e.Use(atm.HMACAuth(auth_opts))
 
 	e.Post("/urls", createUrl)
 	e.Put("/keys/:name", setKey)
