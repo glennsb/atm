@@ -124,3 +124,37 @@ func (d *Datastore) KeyForRequest(u *UrlRequest, appId string) (string, int64, e
 
 	return signing_key, duration, nil
 }
+
+func (d *Datastore) ApiKeySecret(apiKey string) (string, error) {
+	var secret string
+	stmt, err := d.pool.Prepare("SELECT secret from accounts where id = ?")
+	if nil != err {
+		return secret, err
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query(apiKey)
+	if nil != err {
+		return secret, err
+	}
+	defer rows.Close()
+	numRows := 0
+	for rows.Next() {
+		if numRows > 1 {
+			return secret, errors.New("Too many results")
+		}
+		err := rows.Scan(&secret)
+		if nil != err {
+			return "", err
+		}
+		err = rows.Err()
+		if nil != err {
+			return "", err
+		}
+		numRows++
+	}
+	if 0 == numRows || "" == secret {
+		return "", errors.New("No secret")
+	}
+
+	return secret, nil
+}
