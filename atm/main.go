@@ -99,6 +99,9 @@ func setKey(c *echo.Context) error {
 	if nil != err || a.Id == "" {
 		return c.JSON(http.StatusGone, atm.ErrMsg(http.StatusText(http.StatusNotFound)))
 	}
+	if c.Get(atm.API_KEY) != a.Id {
+		return c.JSON(http.StatusForbidden, atm.ErrMsg("Not authorized for this account"))
+	}
 	ds.AddSigningKeyForAccount(k.Key, a.Id)
 	return c.JSON(http.StatusOK, a)
 }
