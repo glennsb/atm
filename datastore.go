@@ -153,7 +153,7 @@ func (d *Datastore) ApiKeySecret(apiKey string) (string, error) {
 		numRows++
 	}
 	if 0 == numRows || "" == secret {
-		return "", errors.New("No secret")
+		return "", errors.New(fmt.Sprintf("No secret key for api: %s", apiKey))
 	}
 
 	return secret, nil
