@@ -170,7 +170,6 @@ func (a *Authorizor) SigningString() string {
 	b.WriteString(a.Nonce)
 	b.WriteString("\n")
 	b.WriteString(a.ApiKey)
-	b.WriteString("\n")
 
 	return b.String()
 }
