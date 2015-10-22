@@ -81,8 +81,10 @@ func main() {
 	auth_opts := atm.NewHmacOpts(keyFinder)
 	e.Use(atm.HMACAuth(auth_opts))
 
-	e.Post("/urls", createUrl)
-	e.Put("/keys/:name", setKey)
+	v1 := e.Group("/v1")
+	v1.Post("/urls", createUrl)
+	v1.Put("/keys/:name", setKey)
+
 	e.Run(":8080")
 }
 
