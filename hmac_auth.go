@@ -104,7 +104,7 @@ func (a *Authorizor) Authentic(r *http.Request) error {
 	body := readerToByte(r.Body)
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 	contentHash := md5Of(body)
-	if a.Md5 != contentHash {
+	if strings.ToLower(a.Md5) != strings.ToLower(contentHash) {
 		return hmacError{fmt.Sprintf("Content MD5s do not match:%s", contentHash)}
 	}
 	secret, err := a.Opts.SecretKeyFor(a.ApiKey)
