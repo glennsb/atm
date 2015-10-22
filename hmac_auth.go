@@ -101,6 +101,7 @@ func (a *Authorizor) Authentic(r *http.Request) error {
 	if err := a.invalidTime(); nil != err {
 		return err
 	}
+	//TODO Actually check the nonce
 	body := readerToByte(r.Body)
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 	contentHash := md5Of(body)
