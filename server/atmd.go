@@ -7,140 +7,106 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"os/user"
 
-	_ "github.com/go-sql-driver/mysql"
-
+	"github.com/codegangsta/cli"
 	"github.com/glennsb/atm"
 	"github.com/howeyc/gopass"
-	"github.com/labstack/echo"
-	mw "github.com/labstack/echo/middleware"
 )
-
-const (
-	HOST     = "https://o3.omrf.org"
-	DURATION = int64(300)
-)
-
-var (
-	Key              string
-	Database         string
-	Database_host    string
-	Database_user    string
-	Database_pass    string
-	Database_port    int
-	Default_duration int64
-	Object_host      string
-	ds               *atm.Datastore
-)
-
-func init() {
-	current_user, _ := user.Current()
-	Database_user = current_user.Username
-	parseFlags()
-
-	fmt.Printf("%s@%s/%s password: ", Database_user, Database_host, Database)
-	Database_pass = string(gopass.GetPasswd())
-}
-
-func parseFlags() {
-	flag.StringVar(&Database, "database", "atm", "Database name")
-	flag.StringVar(&Database_host, "database-host", "localhost", "Database server hostname")
-	flag.IntVar(&Database_port, "database-port", 3306, "Database server port")
-	flag.StringVar(&Database_user, "database-user", Database_user, "Username for database")
-	flag.Int64Var(&Default_duration, "duration", DURATION, "Default lifetime of tempurl")
-	flag.StringVar(&Object_host, "host", HOST, "Swift host prefix")
-
-	flag.Parse()
-}
-
-func keyFinder(a string) (string, error) {
-	return ds.ApiKeySecret(a)
-}
 
 func main() {
-	var err error
-	ds, err = atm.NewDatastore("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
-		Database_user, Database_pass, Database_host,
-		Database_port, Database))
-	if nil != err {
-		log.Fatal(err)
+	app := cli.NewApp()
+	app.Name = "atm"
+	app.Usage = "Automated TempURL Maker"
+	app.Version = "0.0.1 - 20151025"
+	app.Author = "Stuart Glenn"
+	app.Email = "Stuart-Glenn@omrf.org"
+	app.Copyright = "2015 Stuart Glenn, All rights reserved"
+
+	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:  "V, verbose",
+			Usage: "show more output",
+		},
 	}
-	Database_pass = ""
-	defer ds.Close()
 
-	e := echo.New()
+	app.Commands = []cli.Command{
+		serverCommand(),
+	}
 
-	// Middleware
-	e.Use(mw.Logger())
-	e.Use(mw.Recover())
-	auth_opts := atm.NewHmacOpts(keyFinder)
-	e.Use(atm.HMACAuth(auth_opts))
-
-	v1 := e.Group("/v1")
-	v1.Post("/urls", createUrl)
-	v1.Put("/keys/:name", setKey)
-
-	e.Run(":8080")
+	app.RunAndExitOnError()
 }
 
-type keyRequest struct {
-	Key string `json:key`
+func serverFlags() []cli.Flag {
+	current_user, err := user.Current()
+	default_username := ""
+	if nil == err {
+		default_username = current_user.Username
+	}
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:  "database",
+			Usage: "name of database",
+			Value: "atm",
+		},
+		cli.StringFlag{
+			Name:  "database-host",
+			Usage: "hostname of database server",
+			Value: "localhost",
+		},
+		cli.StringFlag{
+			Name:  "database-user",
+			Usage: "username for database connection",
+			Value: default_username,
+		},
+		cli.IntFlag{
+			Name:  "database-port",
+			Usage: "port number of database server",
+			Value: 3306,
+		},
+		cli.DurationFlag{
+			Name:  "duration",
+			Usage: "Default lifetime for generated tempurl",
+			Value: atm.DURATION,
+		},
+		cli.StringFlag{
+			Name:  "object-host, host",
+			Usage: "Swift service host prefix",
+			Value: atm.HOST,
+		},
+	}
 }
 
-func setKey(c *echo.Context) error {
-	k := &keyRequest{}
-	if err := c.Bind(k); nil != err {
-		return c.JSON(http.StatusBadRequest, atm.ErrMsg(err.Error()))
-	}
-	a, err := ds.Account(c.Param("name"))
-	if nil != err || a.Id == "" {
-		return c.JSON(http.StatusGone, atm.ErrMsg(http.StatusText(http.StatusNotFound)))
-	}
-	if c.Get(atm.API_KEY) != a.Id {
-		return c.JSON(http.StatusForbidden, atm.ErrMsg("Not authorized for this account"))
-	}
-	ds.AddSigningKeyForAccount(k.Key, a.Id)
-	return c.JSON(http.StatusOK, a)
-}
+func serverCommand() cli.Command {
+	return cli.Command{
+		Name:  "server",
+		Usage: "Run webservice",
+		Flags: serverFlags(),
+		Action: func(c *cli.Context) {
+			db_user := c.String("database-user")
+			db_host := c.String("database-host")
+			db := c.String("database")
 
-func createUrl(c *echo.Context) error {
-	o := &atm.UrlRequest{Host: Object_host, Duration: Default_duration}
-	if err := c.Bind(o); nil != err {
-		return c.JSON(http.StatusBadRequest, atm.ErrMsg(err.Error()))
-	}
+			fmt.Printf("%s@%s/%s password: ", db_user, db_host, db)
+			db_pass := string(gopass.GetPasswd())
 
-	if !o.Valid() {
-		return c.JSON(http.StatusBadRequest, atm.ErrMsg("Missing account, container, object, or method"))
-	}
+			ds, err := atm.NewDatastore("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
+				db_user, db_pass, db_host, c.Int("database-port"), db))
+			if nil != err {
+				log.Fatal(err)
+			} else {
+				db_pass = ""
+				defer ds.Close()
 
-	duration := int64(0)
-	var err error
-	requestorId, ok := c.Get(atm.API_KEY).(string)
-	if !ok {
-		return c.JSON(http.StatusInternalServerError, atm.ErrMsg("Failed getting requesting id"))
+				service := &atm.Server{
+					Ds:               ds,
+					Object_host:      c.String("object-host"),
+					Default_duration: int64(c.Duration("duration").Minutes()),
+				}
+				service.Run()
+			}
+		},
 	}
-	o.Key, duration, err = ds.KeyForRequest(o, requestorId)
-	if nil != err {
-		log.Printf("keyForRequest: %v, %s. Error: %s", o, "", err.Error())
-		return c.JSON(http.StatusInternalServerError, atm.ErrMsg("Trouble checking authorization"))
-	}
-	if "" == o.Key {
-		return c.JSON(http.StatusForbidden, atm.ErrMsg("Not authorized for this resource"))
-	}
-	if duration > 0 && duration > o.Duration {
-		o.Duration = duration
-	}
-
-	u := &atm.Tmpurl{
-		Url:  o.SignedUrl(),
-		Path: o.Path(),
-	}
-
-	c.Response().Header().Set("Location", u.Url)
-	return c.JSON(http.StatusCreated, u)
 }
