@@ -32,11 +32,52 @@ func main() {
 		},
 	}
 
-	app.Commands = []cli.Command{
-		serverCommand(),
-	}
-
+	app.Commands = clientCommands()
+	app.Commands = append(app.Commands, serverCommand())
 	app.RunAndExitOnError()
+}
+
+func clientCommands() []cli.Command {
+	return []cli.Command{
+		cli.Command{
+			Name:  "url",
+			Usage: "Request a temp url",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:   "api-key, k",
+					Usage:  "account/user atm api-key",
+					EnvVar: "ATM_API_KEY",
+				},
+				cli.StringFlag{
+					Name:   "api-secret, s",
+					Usage:  "account/user atm api-secret",
+					EnvVar: "ATM_API_SECRET",
+				},
+				cli.StringFlag{
+					Name:   "host, h",
+					Usage:  "atm server endpoint",
+					EnvVar: "ATM_HOST",
+				},
+				cli.StringFlag{
+					Name:  "method, m",
+					Usage: "HTTP method requested for temp url",
+					Value: "GET",
+				},
+			},
+			Action: func(c *cli.Context) {
+				log.Fatal("Not implemented yet")
+				return
+			},
+		},
+		cli.Command{
+			Name:  "key",
+			Usage: "Add/Remove signing key",
+			Action: func(c *cli.Context) {
+				log.Fatal("Not implemented yet")
+				return
+			},
+		},
+	}
 }
 
 func serverFlags() []cli.Flag {
