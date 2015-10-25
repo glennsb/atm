@@ -9,6 +9,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"os/user"
 
 	"github.com/codegangsta/cli"
@@ -40,8 +41,10 @@ func main() {
 func clientCommands() []cli.Command {
 	return []cli.Command{
 		cli.Command{
-			Name:  "url",
-			Usage: "Request a temp url",
+			Name:        "url",
+			Usage:       "Request a temp url to Account/Container/Object",
+			ArgsUsage:   "<Account> <Container> <Object> ",
+			Description: "Send a request to the ATM service for a tempurl",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:   "api-key, k",
@@ -54,7 +57,7 @@ func clientCommands() []cli.Command {
 					EnvVar: "ATM_API_SECRET",
 				},
 				cli.StringFlag{
-					Name:   "host, h",
+					Name:   "atm-host, a",
 					Usage:  "atm server endpoint",
 					EnvVar: "ATM_HOST",
 				},
@@ -65,10 +68,34 @@ func clientCommands() []cli.Command {
 				},
 			},
 			Action: func(c *cli.Context) {
-				log.Fatal("Not implemented yet")
-				return
+				method := c.String("method")
+				if "" == method {
+					fmt.Fprintf(os.Stderr, "Missing HTTP method option\n")
+					cli.ShowSubcommandHelp(c)
+					os.Exit(1)
+				}
+				account := c.Args().Get(0)
+				if "" == account {
+					fmt.Fprintf(os.Stderr, "Missing Account argument\n")
+					cli.ShowSubcommandHelp(c)
+					os.Exit(1)
+				}
+				container := c.Args().Get(1)
+				if "" == container {
+					fmt.Fprintf(os.Stderr, "Missing Container argument\n")
+					cli.ShowSubcommandHelp(c)
+					os.Exit(1)
+				}
+				object := c.Args().Get(2)
+				if "" == object {
+					fmt.Fprintf(os.Stderr, "Missing Object argument\n")
+					cli.ShowSubcommandHelp(c)
+					os.Exit(1)
+				}
+				fmt.Printf("Requesting %s to %s/%s/%s\n", method, account, container, object)
 			},
 		},
+
 		cli.Command{
 			Name:  "key",
 			Usage: "Add/Remove signing key",
