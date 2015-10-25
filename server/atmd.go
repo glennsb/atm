@@ -137,17 +137,17 @@ func serverCommand() cli.Command {
 				db_user, db_pass, db_host, c.Int("database-port"), db))
 			if nil != err {
 				log.Fatal(err)
-			} else {
-				db_pass = ""
-				defer ds.Close()
-
-				service := &atm.Server{
-					Ds:               ds,
-					Object_host:      c.String("object-host"),
-					Default_duration: int64(c.Duration("duration").Minutes()),
-				}
-				service.Run()
+				return
 			}
+			db_pass = ""
+			defer ds.Close()
+
+			service := &atm.Server{
+				Ds:               ds,
+				Object_host:      c.String("object-host"),
+				Default_duration: int64(c.Duration("duration").Minutes()),
+			}
+			service.Run()
 		},
 	}
 }
