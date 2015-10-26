@@ -76,6 +76,14 @@ func (e hmacError) Error() string {
 	return e.msg
 }
 
+func AuthorizorForRequest(o *HmacOpts, method string, uri string) *Authorizor {
+	return &Authorizor{
+		Opts:   o,
+		Method: strings.ToUpper(method),
+		Uri:    uri,
+	}
+}
+
 func newAuth(r *http.Request, o *HmacOpts) (*Authorizor, error) {
 	h := r.Header
 	if len(h.Get(echo.Authorization)) <= 0 {
