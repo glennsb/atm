@@ -21,7 +21,7 @@ const AUTH_SEP = ":"
 const XTIME = "X-Timestamp"
 const CONTENT_TYPE = "Content-Type"
 const CONTENT_MD5 = "Content-MD5"
-const XNONC = "X-Nonce"
+const XNONCE = "X-Nonce"
 const API_KEY = "api-key"
 
 type KeyFinder func(string) (string, error)
@@ -185,9 +185,9 @@ func (a *Authorizor) extractRequiredHeaders(h *http.Header) error {
 	if "" == a.Type {
 		return hmacError{fmt.Sprintf("Missing required %s header", CONTENT_TYPE)}
 	}
-	a.Nonce = h.Get(XNONC)
+	a.Nonce = h.Get(XNONCE)
 	if "" == a.Nonce {
-		return hmacError{fmt.Sprintf("Missing required %s header", XNONC)}
+		return hmacError{fmt.Sprintf("Missing required %s header", XNONCE)}
 	}
 	return a.parseTimestamp(h.Get(XTIME))
 }
