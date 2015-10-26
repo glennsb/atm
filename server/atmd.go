@@ -92,7 +92,17 @@ func clientCommands() []cli.Command {
 					cli.ShowSubcommandHelp(c)
 					os.Exit(1)
 				}
-				fmt.Printf("Requesting %s to %s/%s/%s\n", method, account, container, object)
+				atm := &atm.AtmClient{
+					ApiKey:    c.String("api-key"),
+					ApiSecret: c.String("api-secret"),
+					AtmHost:   c.String("atm-host"),
+				}
+				url, err := atm.RequestTempUrl(method, account, container, object)
+				if nil != err {
+					log.Fatal(err)
+					return
+				}
+				fmt.Println(url)
 			},
 		},
 
