@@ -182,7 +182,7 @@ func serverCommand() cli.Command {
 			service := &atm.Server{
 				Ds:               ds,
 				Object_host:      c.String("object-host"),
-				Default_duration: int64(c.Duration("duration").Minutes()),
+				Default_duration: int64(c.Duration("duration").Seconds()),
 			}
 			service.Run()
 		},
