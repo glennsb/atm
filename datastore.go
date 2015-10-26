@@ -100,9 +100,9 @@ func (d *Datastore) KeyForRequest(u *UrlRequest, appId string) (string, int64, e
 	numRows := 0
 	var grantingAccountId string
 	for rows.Next() {
-		if numRows > 1 {
-			return signing_key, duration, errors.New("Too many results")
-		}
+		//if numRows > 1 {
+		//return signing_key, duration, errors.New("Too many results")
+		//}
 		err := rows.Scan(&grantingAccountId, &duration)
 		if nil != err {
 			return signing_key, duration, err
