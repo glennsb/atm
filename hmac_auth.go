@@ -123,7 +123,7 @@ func (a *Authorizor) Authentic(r *http.Request) error {
 	if "" == secret {
 		return hmacError{fmt.Sprintf("No secret key for %s", a.ApiKey)}
 	}
-	generatedSig := a.signatureWith(secret)
+	generatedSig := a.SignatureWith(secret)
 	if "" == generatedSig {
 		return hmacError{"Unable to generate hmac signature"}
 	}
@@ -155,7 +155,7 @@ func (a *Authorizor) invalidTime() error {
 	return nil
 }
 
-func (a *Authorizor) signatureWith(key string) string {
+func (a *Authorizor) SignatureWith(key string) string {
 	c := a.SigningString()
 	h := hmac.New(sha256.New, []byte(key))
 	h.Write([]byte(c))
