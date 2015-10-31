@@ -33,12 +33,25 @@ func (a *Server) Run() {
 	v1 := e.Group("/v1")
 	v1.Post("/urls", a.createUrl)
 	v1.Put("/keys/:name", a.setKey)
+	v1.Delete("/keys/:name", a.removeKey)
 
 	e.Run(":8080")
 }
 
 type keyRequest struct {
 	Key string `json:key`
+}
+
+func (s *Server) removeKey(c *echo.Context) error {
+	a, err := s.Ds.Account(c.Param("name"))
+	if nil != err || a.Id == "" {
+		return c.JSON(http.StatusGone, ErrMsg(http.StatusText(http.StatusNotFound)))
+	}
+	if c.Get(API_KEY) != a.Id {
+		return c.JSON(http.StatusForbidden, ErrMsg("Not authorized for this account"))
+	}
+	s.Ds.RemoveSigningKeyForAccount(a.Id)
+	return c.JSON(http.StatusNoContent, a)
 }
 
 func (s *Server) setKey(c *echo.Context) error {
