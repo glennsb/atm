@@ -39,6 +39,13 @@ func (c Cache) Set(key string, data string) {
 	shard.items[key] = data
 }
 
+func (c Cache) Delete(key string) {
+	shard := c.GetShard(key)
+	shard.lock.Lock()
+	defer shard.lock.Unlock()
+	delete(shard.items, key)
+}
+
 func (c Cache) GetShard(key string) (shard *shard) {
 	hasher := sha1.New()
 	hasher.Write([]byte(key))
