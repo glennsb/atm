@@ -172,8 +172,10 @@ func (a *Authorizor) SigningString() string {
 	b.WriteString("\n")
 	b.WriteString(a.Md5)
 	b.WriteString("\n")
-	b.WriteString(a.Type)
-	b.WriteString("\n")
+	if "" != a.Type {
+		b.WriteString(a.Type)
+		b.WriteString("\n")
+	}
 	b.WriteString(a.Xtime)
 	b.WriteString("\n")
 	b.WriteString(a.Nonce)
@@ -190,9 +192,6 @@ func (a *Authorizor) extractRequiredHeaders(h *http.Header) error {
 		return hmacError{fmt.Sprintf("Missing required %s header", CONTENT_MD5)}
 	}
 	a.Type = h.Get(CONTENT_TYPE)
-	if "" == a.Type {
-		return hmacError{fmt.Sprintf("Missing required %s header", CONTENT_TYPE)}
-	}
 	a.Nonce = h.Get(XNONCE)
 	if "" == a.Nonce {
 		return hmacError{fmt.Sprintf("Missing required %s header", XNONCE)}
