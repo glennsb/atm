@@ -44,6 +44,10 @@ func (d *Datastore) Close() error {
 	return d.pool.Close()
 }
 
+func (d *Datastore) RemoveSigningKeyForAccount(account string) {
+	d.signingKeys.Delete(account)
+}
+
 func (d *Datastore) AddSigningKeyForAccount(key, account string) {
 	d.signingKeys.Set(account, key)
 }
