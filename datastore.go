@@ -9,7 +9,25 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 )
+
+type NonceStore struct {
+	nonces *ExpiringCache
+}
+
+func NewNonceStore() NonceStore {
+	return NonceStore{nonces: NewExpiringCache(5 * time.Minute)}
+}
+
+func (d NonceStore) Add(n string) {
+	d.nonces.Set(n, "", 10*time.Minute)
+}
+
+func (d NonceStore) Valid(n string) bool {
+	_, found := d.nonces.Get(n)
+	return !found
+}
 
 type Datastore struct {
 	pool        *sql.DB
