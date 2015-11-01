@@ -13,7 +13,7 @@ import (
 
 type Datastore struct {
 	pool        *sql.DB
-	signingKeys Cache
+	signingKeys *Cache
 }
 
 type Account struct {
@@ -53,7 +53,10 @@ func (d *Datastore) AddSigningKeyForAccount(key, account string) {
 }
 
 func (d *Datastore) signingKeyFor(account string) string {
-	return d.signingKeys.Get(account)
+	if k, found := d.signingKeys.Get(account); found {
+		return k.(string)
+	}
+	return ""
 }
 
 func (d *Datastore) Account(name string) (*Account, error) {
