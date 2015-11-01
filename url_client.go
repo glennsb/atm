@@ -29,7 +29,7 @@ func (c *AtmClient) RequestTempUrl(method, account, container, object string) (s
 	if nil != err {
 		return "", err
 	}
-	hopts := NewHmacOpts(func(s string) (string, error) { return "", nil })
+	hopts := NewHmacOpts(func(s string) (string, error) { return "", nil }, nil)
 	auth := AuthorizorForRequest(hopts, "POST", uri)
 	auth.ApiKey = c.ApiKey
 	auth.Md5 = md5Of(json)

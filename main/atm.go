@@ -183,6 +183,7 @@ func serverCommand() cli.Command {
 				Ds:               ds,
 				Object_host:      c.String("object-host"),
 				Default_duration: int64(c.Duration("duration").Seconds()),
+				Nonces:           atm.NewNonceStore(),
 			}
 			service.Run()
 		},

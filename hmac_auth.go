@@ -26,17 +26,24 @@ const API_KEY = "api-key"
 
 type KeyFinder func(string) (string, error)
 
+type NonceChecker interface {
+	Add(string)
+	Valid(string) bool
+}
+
 type HmacOpts struct {
 	AuthPrefix   string
 	Expiration   time.Duration
 	SecretKeyFor KeyFinder
+	NonceChecker NonceChecker
 }
 
-func NewHmacOpts(f KeyFinder) *HmacOpts {
+func NewHmacOpts(f KeyFinder, nc NonceChecker) *HmacOpts {
 	o := &HmacOpts{
 		AuthPrefix:   "ATM_Auth",
 		Expiration:   5 * time.Minute,
 		SecretKeyFor: f,
+		NonceChecker: nc,
 	}
 	return o
 }
@@ -105,11 +112,22 @@ func newAuth(r *http.Request, o *HmacOpts) (*Authorizor, error) {
 	return a, nil
 }
 
+func (a *Authorizor) invalidNonce() error {
+	if a.Opts.NonceChecker.Valid(a.ApiKey + a.Nonce) {
+		return nil
+	}
+	return hmacError{"Reused Nonce"}
+}
+
 func (a *Authorizor) Authentic(r *http.Request) error {
 	if err := a.invalidTime(); nil != err {
 		return err
 	}
-	//TODO Actually check the nonce
+	if err := a.invalidNonce(); nil != err {
+		a.Opts.NonceChecker.Add(a.ApiKey + a.Nonce)
+		return err
+	}
+	a.Opts.NonceChecker.Add(a.ApiKey + a.Nonce)
 	body := readerToByte(r.Body)
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 	contentHash := md5Of(body)

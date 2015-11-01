@@ -19,6 +19,7 @@ type Server struct {
 	Ds               *Datastore
 	Object_host      string
 	Default_duration int64
+	Nonces           NonceChecker
 }
 
 func (a *Server) Run() {
@@ -27,7 +28,7 @@ func (a *Server) Run() {
 	// Middleware
 	e.Use(mw.Logger())
 	e.Use(mw.Recover())
-	auth_opts := NewHmacOpts(a.Ds.ApiKeySecret)
+	auth_opts := NewHmacOpts(a.Ds.ApiKeySecret, a.Nonces)
 	e.Use(HMACAuth(auth_opts))
 
 	v1 := e.Group("/v1")
