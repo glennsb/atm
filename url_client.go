@@ -35,7 +35,7 @@ func (c *AtmClient) RequestTempUrl(method, account, container, object string) (s
 	auth.Md5 = md5Of(json)
 	auth.Type = gorequest.Types["json"]
 	auth.Xtime = time.Now().UTC().Format(time.RFC3339)
-	auth.Nonce = fmt.Sprintf("%d", time.Now().Unix())
+	auth.Nonce = fmt.Sprintf("%d", time.Now().UnixNano())
 
 	api := gorequest.New()
 

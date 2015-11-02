@@ -21,7 +21,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "atm"
 	app.Usage = "Automated TempURL Maker"
-	app.Version = "0.0.3 - 20151101"
+	app.Version = "0.0.4 - 20151102"
 	app.Author = "Stuart Glenn"
 	app.Email = "Stuart-Glenn@omrf.org"
 	app.Copyright = "2015 Stuart Glenn, All rights reserved"
