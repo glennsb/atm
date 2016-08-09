@@ -183,15 +183,15 @@ func serverCommand() cli.Command {
 			db := c.String("database")
 
 			fmt.Printf("%s@%s/%s password: ", db_user, db_host, db)
-			db_pass := string(gopass.GetPasswd())
+			db_pass, _ := gopass.GetPasswd()
 
 			ds, err := atm.NewDatastore("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
-				db_user, db_pass, db_host, c.Int("database-port"), db))
+				db_user, string(db_pass), db_host, c.Int("database-port"), db))
 			if nil != err {
 				log.Fatal(err)
 				return
 			}
-			db_pass = ""
+			db_pass = []byte("")
 			defer ds.Close()
 
 			service := &atm.Server{
