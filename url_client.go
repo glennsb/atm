@@ -17,13 +17,16 @@ type AtmClient struct {
 	AtmHost   string
 }
 
-func (c *AtmClient) RequestTempUrl(method, account, container, object string) (string, error) {
+func (c *AtmClient) RequestTempUrl(method, account, container, object string,
+	duration int64) (string, error) {
+
 	uri := "/v1/urls"
 	request := UrlRequest{
 		Account:   account,
 		Container: container,
 		Object:    object,
 		Method:    strings.ToUpper(method),
+		Duration:  duration,
 	}
 	json, err := json.Marshal(request)
 	if nil != err {
@@ -46,7 +49,8 @@ func (c *AtmClient) RequestTempUrl(method, account, container, object string) (s
 		Set(CONTENT_MD5, auth.Md5).
 		Set(XNONCE, auth.Nonce).
 		Set(API_KEY, auth.ApiKey).
-		Set("Authorization", fmt.Sprintf("%s %s:%s", hopts.AuthPrefix, c.ApiKey, auth.SignatureWith(c.ApiSecret)))
+		Set("Authorization", fmt.Sprintf("%s %s:%s", hopts.AuthPrefix, c.ApiKey,
+			auth.SignatureWith(c.ApiSecret)))
 	api.BounceToRawString = true
 	resp, body, errs := api.Send(string(json)).End()
 	if nil != errs || len(errs) > 0 {

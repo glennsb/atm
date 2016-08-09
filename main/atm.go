@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"os/user"
+	"time"
 
 	"github.com/codegangsta/cli"
 	"github.com/glennsb/atm"
@@ -21,10 +22,10 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "atm"
 	app.Usage = "Automated TempURL Maker"
-	app.Version = "0.0.4 - 20151102"
+	app.Version = "0.0.5 - 20160809"
 	app.Author = "Stuart Glenn"
 	app.Email = "Stuart-Glenn@omrf.org"
-	app.Copyright = "2015 Stuart Glenn, All rights reserved"
+	app.Copyright = "2016 Stuart Glenn, All rights reserved"
 
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
@@ -66,6 +67,11 @@ func clientCommands() []cli.Command {
 					Usage: "HTTP method requested for temp url",
 					Value: "GET",
 				},
+				cli.StringFlag{
+					Name:  "duration, d",
+					Usage: "Duration for which the url will be active (example 30s, 2m, 4h)",
+					Value: "",
+				},
 			},
 			Action: func(c *cli.Context) {
 				method := c.String("method")
@@ -73,6 +79,15 @@ func clientCommands() []cli.Command {
 					fmt.Fprintf(os.Stderr, "Missing HTTP method option\n")
 					cli.ShowSubcommandHelp(c)
 					os.Exit(1)
+				}
+				duration := int64(0)
+				if "" != c.String("duration") {
+					d, err := time.ParseDuration(c.String("duration"))
+					if nil != err {
+						log.Fatal(err)
+						return
+					}
+					duration = int64(d.Seconds())
 				}
 				account := c.Args().Get(0)
 				if "" == account {
@@ -97,7 +112,7 @@ func clientCommands() []cli.Command {
 					ApiSecret: c.String("api-secret"),
 					AtmHost:   c.String("atm-host"),
 				}
-				url, err := atm.RequestTempUrl(method, account, container, object)
+				url, err := atm.RequestTempUrl(method, account, container, object, duration)
 				if nil != err {
 					log.Fatal(err)
 					return

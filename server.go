@@ -78,16 +78,16 @@ func (s *Server) createUrl(c *echo.Context) error {
 	}
 
 	if !o.Valid() {
-		return c.JSON(http.StatusBadRequest, ErrMsg("Missing account, container, object, or method"))
+		return c.JSON(http.StatusBadRequest, ErrMsg("Missing account, container, object, or method, or invalid duration"))
 	}
 
-	duration := int64(0)
+	ruleDuration := int64(0)
 	var err error
 	requestorId, ok := c.Get(API_KEY).(string)
 	if !ok {
 		return c.JSON(http.StatusInternalServerError, ErrMsg("Failed getting requesting id"))
 	}
-	o.Key, duration, err = s.Ds.KeyForRequest(o, requestorId)
+	o.Key, ruleDuration, err = s.Ds.KeyForRequest(o, requestorId)
 	if nil != err {
 		log.Printf("keyForRequest: %v, %s. Error: %s", o, "", err.Error())
 		return c.JSON(http.StatusInternalServerError, ErrMsg("Trouble checking authorization"))
@@ -95,8 +95,14 @@ func (s *Server) createUrl(c *echo.Context) error {
 	if "" == o.Key {
 		return c.JSON(http.StatusForbidden, ErrMsg("Not authorized for this resource"))
 	}
-	if duration > 0 && duration > o.Duration {
-		o.Duration = duration
+	//if ruleDuration > 0 && ruleDuration > o.Duration {
+	//o.Duration = ruleDuration
+	//}
+	if ruleDuration > 0 && o.Duration <= 0 {
+		o.Duration = ruleDuration
+	}
+	if o.Duration <= 0 {
+		o.Duration = s.Default_duration
 	}
 
 	u := &Tmpurl{
