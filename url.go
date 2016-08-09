@@ -26,14 +26,15 @@ type UrlRequest struct {
 	Method    string `json:method`
 	Key       string `json:"-"`
 	Host      string `json:"-"`
-	Duration  int64  `json:"-"`
+	Duration  int64  `json:"duration"`
 }
 
 func (u *UrlRequest) Valid() bool {
 	return "" != u.Account &&
 		"" != u.Container &&
 		"" != u.Object &&
-		"" != u.Method
+		"" != u.Method &&
+		u.Duration > 0
 }
 
 func (u *UrlRequest) Path() string {
@@ -49,7 +50,8 @@ func (u *UrlRequest) signature(expires int64) string {
 
 func (u *UrlRequest) SignedUrl() string {
 	expires := time.Now().UTC().Unix() + u.Duration
-	return fmt.Sprintf("%s%s?temp_url_sig=%s&temp_url_expires=%d", u.Host, u.Path(), u.signature(expires), expires)
+	return fmt.Sprintf("%s%s?temp_url_sig=%s&temp_url_expires=%d", u.Host, u.Path(),
+		u.signature(expires), expires)
 }
 
 func ErrMsg(msg string) map[string]string {
